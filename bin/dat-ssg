@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+const path = require('path')
+const logger = require('pino')({ name: 'dat-ssg-bin' })
+const { version } = require('../package.json')
+
+const { AbortError, processSignal } = require('../lib/abort.js')
+
+const opts = require('args')
+  .option(['w', 'work-folder'], 'Work Folder, where to download the data to.')
+  .option(['c', 'configuration-folder'], 'Folder that contains all the files.')
+  .option(['r', 'respawn-time'], `Time in ms to respawn a worker if an error occurs.`, 5000)
+  .example('dat-ssg --work-folder ./work --configuration-folder ./config', 'To use/watch for all configuration files and process each')
+  .parse(process.argv, {
+    name: 'dat-ssg'
+  })
+
+logger.info('version: %s', version)
+
+const datSSG = require('../')
+datSSG({
+  configurationFolder: opts.configurationFolder,
+  workFolder: opts.workFolder,
+  signal: processSignal,
+  respawnTime: opts.respawnTime
+})
+  .catch(err => {
+    if (err instanceof AbortError) {
+      return
+    }
+    logger.error(err)
+  })

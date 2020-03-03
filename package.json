@@ -1,0 +1,39 @@
+{
+  "name": "dat-ssg",
+  "version": "1.0.0",
+  "description": "Turing a dynamic site into a static site hosted through dat",
+  "main": "replace.js",
+  "scripts": {
+    "test": "npm run test:lint && npm run test:unit",
+    "test:unit": "jest",
+    "test:lint": "standard --env jest"
+  },
+  "bin": {
+    "dat-ssg": "./bin/dat-ssg"
+  },
+  "keywords": [
+    "dat",
+    "static-site",
+    "hosting",
+    "cli"
+  ],
+  "author": "Martin Heidegger <martin.heidegger@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "abort-controller": "^3.0.0",
+    "args": "^5.0.1",
+    "chokidar": "^3.3.1",
+    "dat-node": "^3.5.15",
+    "del": "^5.1.0",
+    "escape-string-regexp": "^2.0.0",
+    "flexlock": "^1.2.1",
+    "netlify-cli": "^2.36.0",
+    "pino": "^5.17.0",
+    "process-exists": "^4.0.0"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "standard": "^14.3.1",
+    "tape": "^4.13.0"
+  }
+}

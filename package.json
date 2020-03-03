@@ -2,7 +2,7 @@
   "name": "dat-ssg",
   "version": "1.0.1",
   "description": "Turing a dynamic site into a static site hosted through dat",
-  "main": "replace.js",
+  "main": "index.js",
   "scripts": {
     "test": "npm run test:lint && npm run test:unit",
     "test:unit": "jest",

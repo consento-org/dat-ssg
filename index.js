@@ -68,8 +68,6 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     child.stderr.pipe(err, { end: false })
     child.on('exit', (code, signal) => {
       logger.info('%s closed with code %s and signal %s', filename, code || 0, signal)
-      out.write('\n')
-      err.write('\n')
       triggerRespawn()
     })
     const closed = new Promise(resolve => child.on('close', resolve))

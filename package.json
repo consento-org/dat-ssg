@@ -33,7 +33,6 @@
   },
   "devDependencies": {
     "jest": "^25.1.0",
-    "standard": "^14.3.1",
-    "tape": "^4.13.0"
+    "standard": "^14.3.1"
   }
 }

@@ -45,7 +45,7 @@ const waitFor = (time, signal) => new Promise((resolve, reject) => {
 
   while (true) {
     await site.update({ signal: processSignal })
-    logger.info('waiting: %d', config.update)
+    logger.info('waiting: %d ms until %s', config.update, new Date(Date.now() + config.update).toString())
     await waitFor(config.update, processSignal)
   }
 })()

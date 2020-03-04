@@ -11,6 +11,13 @@
   "bin": {
     "dat-ssg": "./bin/dat-ssg"
   },
+  "files": [
+    "index.js",
+    "worker.js",
+    "bin",
+    "lib",
+    "__tests__"
+  ],
   "keywords": [
     "dat",
     "static-site",

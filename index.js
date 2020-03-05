@@ -132,15 +132,18 @@ module.exports = async ({ configurationFolder, workFolder, signal, respawnTime }
   watcher.on('change', updateWorker)
   watcher.on('unlink', closeWorker)
 
+  const { abortPromise, release } = untilAbort(signal, async () => {
+    logger.info('close')
+    watcher.close()
+  })
+
   try {
     await Promise.race([
       new Promise((resolve, reject) => watcher.on('error', reject)),
-      untilAbort(signal, async () => {
-        logger.info('close')
-        watcher.close()
-      })
+      abortPromise
     ])
   } finally {
+    release()
     for (const filename of workers.keys()) {
       await closeWorker(filename)
     }

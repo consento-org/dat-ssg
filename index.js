@@ -44,8 +44,8 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     if (respawnTimer !== undefined) {
       clearTimeout(respawnTimer)
     }
+    await closeChild()
     await Promise.all([
-      closeChild(),
       closeStream(err),
       closeStream(out)
     ])

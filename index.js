@@ -72,7 +72,7 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     })
     const closed = new Promise(resolve => child.on('close', resolve))
     closeChild = async () => {
-      child.kill()
+      child.kill('SIGINT')
       await closed
       closeChild = undefined
     }

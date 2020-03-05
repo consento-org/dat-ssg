@@ -60,7 +60,7 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     if (closeChild !== undefined) {
       await closeChild()
     }
-    logger.info('Spawning %s in workfolder %s', filename, workerPath)
+    logger.info('Spawning worker for %s in workfolder %s', filename, workerPath)
     const child = spawn(path.join(__dirname, 'worker.js'), [filename, workerPath], {
       stdio: ['ignore', 'pipe', 'pipe']
     })

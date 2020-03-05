@@ -2,7 +2,7 @@
 const path = require('path')
 const { readlink, stat } = require('fs').promises
 const logger = require('pino')({ name: 'dat-ssg-worker' })
-const { processSignal, AbortError } = require('./lib/abort.js')
+const { processSignal, listenAbort } = require('./lib/abort.js')
 const Site = require('./lib/site.js')
 const { version } = require('./package.json')
 const filename = process.argv[2]
@@ -11,24 +11,19 @@ const workdir = process.argv[3]
 logger.info('start: [version=%s, workdir=%s]', version, workdir)
 
 const waitFor = (time, signal) => new Promise((resolve, reject) => {
-  const signalHandler = () => {
+  const signalHandler = err => {
+    unlisten()
     if (timer !== undefined) {
       clearTimeout(timer)
-      timer = undefined
-    }
-    reject(new AbortError())
-  }
-  let timer = setTimeout(() => {
-    if (signal) {
-      signal.removeEventListener('abort', signalHandler)
     }
     timer = undefined
+    if (err) {
+      return reject(err)
+    }
     resolve()
-  }, time)
-
-  if (signal) {
-    signal.addEventListener('abort', signalHandler)
   }
+  let timer = setTimeout(signalHandler, time)
+  const unlisten = listenAbort(signal, signalHandler)
 })
 
 ;(async () => {

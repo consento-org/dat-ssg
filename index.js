@@ -27,28 +27,27 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     if (respawnTimer !== undefined) {
       return
     }
-    logger.info('Trigger respawn of %s in %d milliseconds', filename, respawnTime)
+    logger.info('Trigger respawn of %s in %dms at %s', filename, respawnTime, new Date(Date.now() + respawnTime).toString())
     respawnTimer = setTimeout(() => {
       respawnTimer = undefined
+      logger.info('forcing respawn of %s', filename)
       update()
     }, respawnTime)
   }
 
-  const err = createWriteStream(`${workerPath}.err`, { flags: 'a' })
-  err.on('error', triggerRespawn)
-  const out = createWriteStream(`${workerPath}.out`, { flags: 'a' })
-  out.on('error', triggerRespawn)
-
   const destroy = async () => {
+    if (destroyed === true) {
+      logger.info('Skipping repeat destroying of %s', workerPath)
+      return
+    }
+    logger.info('Destroying %s', workerPath)
     destroyed = true
     if (respawnTimer !== undefined) {
       clearTimeout(respawnTimer)
     }
-    await closeChild()
-    await Promise.all([
-      closeStream(err),
-      closeStream(out)
-    ])
+    if (closeChild !== undefined) {
+      await closeChild()
+    }
   }
   const update = async () => {
     if (destroyed) {
@@ -60,6 +59,16 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     if (closeChild !== undefined) {
       await closeChild()
     }
+    const err = createWriteStream(`${workerPath}.err`, { flags: 'a' })
+    err.on('error', err => {
+      logger.info('Write-stream Eeror for %s.err: %s', workerPath, err.message)
+      triggerRespawn()
+    })
+    const out = createWriteStream(`${workerPath}.out`, { flags: 'a' })
+    out.on('error', err => {
+      logger.info('Write-stream error for %s.out: %s', workerPath, err.message)
+      triggerRespawn()
+    })
     logger.info('Spawning worker for %s in workfolder %s', filename, workerPath)
     const child = spawn(path.join(__dirname, 'worker.js'), [filename, workerPath], {
       stdio: ['ignore', 'pipe', 'pipe']
@@ -74,6 +83,10 @@ async function createFileWorker (filename, workFolder, respawnTime) {
     closeChild = async () => {
       child.kill('SIGINT')
       await closed
+      await Promise.all([
+        closeStream(err).catch(err => logger.info('warning %s.err couldnt properly be closed: %s', workerPath, err.message)),
+        closeStream(out).catch(err => logger.info('warning %s.out couldnt properly be closed: %s', workerPath, err.message))
+      ])
       closeChild = undefined
     }
   }

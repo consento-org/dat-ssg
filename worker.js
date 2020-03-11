@@ -45,6 +45,6 @@ const waitFor = (time, signal) => new Promise((resolve, reject) => {
   }
 })()
   .catch(err => {
-    logger.error((err && err.stack || err.message) || err)
+    logger.error((err && (err.stack || err.message)) || err)
     setTimeout(() => process.exit(1), 200)
   })

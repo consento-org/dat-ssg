@@ -39,6 +39,7 @@
     "process-exists": "^4.0.0"
   },
   "devDependencies": {
+    "@types/pino": "^5.17.0",
     "jest": "^25.1.0",
     "standard": "^14.3.1"
   }

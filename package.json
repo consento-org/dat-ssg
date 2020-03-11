@@ -1,6 +1,6 @@
 {
   "name": "dat-ssg",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Turing a dynamic site into a static site hosted through dat",
   "main": "index.js",
   "scripts": {

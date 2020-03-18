@@ -60,6 +60,7 @@ module.exports = {
     "/b.html",
     "/c.html"
   ],
+  notFound: '/404/', // Adds '/404/ to the roots and adds 404 configuration to the deployments (netlify, dat,...)
   // Interval to look for updates
   update: 1000 * 60 * 20, // Update every 10 minutes
   // The process will use following user name to make commits

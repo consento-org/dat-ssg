@@ -85,100 +85,82 @@ async function * strIter (...strings) {
     yield string
   }
 }
-
-describe('match', () => {
-  const { match } = require('../../lib/fs')
+describe('replace()', () => {
+  const { replace, iterToString } = require('../../lib/fs')
   it('cant find nothing', async () => {
-    for await (const result of match({ stream: strIter('abcd'), patterns: [] })) {
-      expect(result).toEqual({
-        end: 'abcd'
-      })
+    for await (const result of replace({ stream: strIter('abcd'), patternMap: new Map() })) {
+      expect(result).toEqual('abcd')
     }
   })
-  it('can find something', async () => {
+  it('can replace something', async () => {
     const pattern = /b/g
-    const iter = match({ stream: strIter('abcd'), patterns: [pattern] })
-    const a = await iter.next()
-    expect(a.done).toBe(false)
-    expect(a.value.result).toBeDefined()
-    expect(a.value.pattern).toBe(pattern)
-    expect(a.value.result.index).toBe(1)
-    expect(a.value.result.input).toBe('ab')
-    const b = await iter.next()
-    expect(b.value.end).toBe('cd')
-    expect(b.done).toBe(false)
+    const iter = replace({
+      stream: strIter('abcd'),
+      patternMap: new Map([[pattern, ([match], context, count) => {
+        expect(match).toBe('b')
+        expect(context).toBe(undefined)
+        expect(count).toBe(0)
+        return 'X'
+      }]])
+    })
+    expect(await iterToString(iter)).toBe('aXcd')
+    expect(pattern.lastIndex).toBe(0)
   })
-  it('can find it multiple times, over chunks', async () => {
+  it('can find it over chunks', async () => {
     const pattern = /cd/g
-    const iter = match({ stream: strIter('abc', 'def'), patterns: [pattern] })
-    const a = await iter.next()
-    expect(a.done).toBe(false)
-    expect(a.value.result).toBeDefined()
-    expect(a.value.pattern).toBe(pattern)
-    expect(a.value.result.index).toBe(2)
-    expect(a.value.result.input).toBe('abcd')
-    const b = await iter.next()
-    expect(b.value.end).toBe('ef')
-    expect(b.done).toBe(false)
+    const iter = replace({
+      stream: strIter('abc', 'def'),
+      patternMap: new Map([[pattern, ([match]) => {
+        expect(match).toBe('cd')
+        return 'XY'
+      }]])
+    })
+    expect(await iterToString(iter)).toBe('abXYef')
+  })
+  it('can find it multiple times over multiple chunks', async () => {
+    const pattern = /cd/g
+    const iter = replace({
+      stream: strIter('abc', 'def-abc', 'def-ab', 'cdef'),
+      patternMap: new Map([[pattern, ([match], _, count) => {
+        expect(match).toBe('cd')
+        if (count < 0 || count > 2 || isNaN(count)) {
+          throw new Error(`unexpected count ${count}`)
+        }
+        return 'XY'
+      }]])
+    })
+    expect(await iterToString(iter)).toBe('abXYef-abXYef-abXYef')
   })
   it('can find several patterns in a file', async () => {
     const patternA = /b/g
     const patternB = /2/g
-    const patternC = /b?cd/g
-    const iter = match({ stream: strIter('abcd-1234'), patterns: [patternA, patternB, patternC] })
-    const a = await iter.next()
-    expect(a.done).toBe(false)
-    expect(a.value.result).toBeDefined()
-    expect(a.value.pattern).toBe(patternA)
-    expect(a.value.result.index).toBe(1)
-    expect(a.value.result.input).toBe('ab')
-    const b = await iter.next()
-    expect(b.done).toBe(false)
-    expect(b.value.result).toBeDefined()
-    expect(b.value.pattern).toBe(patternC)
-    expect(b.value.result.index).toBe(0)
-    expect(b.value.result.input).toBe('cd')
-    const c = await iter.next()
-    expect(c.done).toBe(false)
-    expect(c.value.result).toBeDefined()
-    expect(c.value.pattern).toBe(patternB)
-    expect(c.value.result.index).toBe(2)
-    expect(c.value.result.input).toBe('-12')
-    const d = await iter.next()
-    expect(d.value.end).toBe('34')
-    expect(d.done).toBe(false)
+    const patternC = /b?cd/ig
+    const iter = replace({
+      stream: strIter('abcd-1234-b'),
+      patternMap: new Map([
+        [patternA, () => 'B'],
+        [patternB, () => 'X'],
+        [patternC, ([match]) => {
+          expect(match).toBe('Bcd')
+          return 'rst'
+        }]
+      ])
+    })
+    expect(await iterToString(iter)).toBe('arst-1X34-B')
+    expect(patternA.lastIndex).toBe(0)
+    expect(patternB.lastIndex).toBe(0)
+    expect(patternC.lastIndex).toBe(0)
   })
-  it('can find patterns exceeding chunks', async () => {
-    const pattern = /cd/g
-    const iter = match({ stream: strIter('abc', 'def'), patterns: [pattern] })
-    const a = await iter.next()
-    expect(a.done).toBe(false)
-    expect(a.value.result).toBeDefined()
-    expect(a.value.pattern).toBe(pattern)
-    expect(a.value.result.index).toBe(2)
-    expect(a.value.result.input).toBe('abcd')
-    const c = await iter.next()
-    expect(c.value.end).toBe('ef')
-    expect(c.done).toBe(false)
+  it('can find repeatingly patterns exceeding multiple chunks', async () => {
+    const pattern = /[0-9]{6}/ig
+    const iter = replace({
+      stream: strIter('abc1', '234', '56ghi', '789jkl'),
+      patternMap: new Map([
+        [pattern, () => 'XXX']
+      ])
+    })
+    expect(await iterToString(iter)).toBe('abcXXXghi789jkl')
   })
-  it('can find repeatingly patterns exceeding chunks', async () => {
-    const pattern = /[0-9]{3}/ig
-    const iter = match({ stream: strIter('abc1', '23def4', '56ghi', '789jkl'), patterns: [pattern] })
-    const a = await iter.next()
-    expect(a.value.result).toBeDefined()
-    expect(a.value.result.input).toBe('abc123')
-    const b = await iter.next()
-    expect(b.value.result).toBeDefined()
-    expect(b.value.result.input).toBe('def456')
-    const c = await iter.next()
-    expect(c.value.result).toBeDefined()
-    expect(c.value.result.input).toBe('ghi789')
-    const d = await iter.next()
-    expect(d.value.end).toBe('jkl')
-  })
-})
-describe('replace', () => {
-  const { replace, iterToString } = require('../../lib/fs')
   it('replace several occurances in a file', async () => {
     const patternA = /b/g
     const patternB = /[23]{2}/g

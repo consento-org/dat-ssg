@@ -34,13 +34,13 @@
     "del": "^5.1.0",
     "escape-string-regexp": "^2.0.0",
     "flexlock": "^1.2.1",
-    "netlify-cli": "^2.36.0",
+    "netlify-cli": "^2.40.0",
     "pino": "^5.17.0",
     "process-exists": "^4.0.0"
   },
   "devDependencies": {
     "@types/pino": "^5.17.0",
     "jest": "^25.1.0",
-    "standard": "^14.3.1"
+    "standard": "^14.3.3"
   }
 }
